@@ -13,7 +13,7 @@ load_all_extensions = False
 print("Extensions to load (Default=all):")
 print(" => ", end="")
 extensions_to_load = input()
-print()
+print() # newline
 
 if extensions_to_load == "" or "all":
     load_all_extensions = True

@@ -22,6 +22,15 @@ class Events(commands.Cog):
                 self.db.commit()
 
     @commands.Cog.listener()
+    async def on_member_join(self, member):
+        if member.id == self.bot.user.id:
+                return
+
+        if len(self.cs.execute('SELECT * FROM users WHERE id=?', (member.id, )).fetchall()) == 0:
+            self.cs.execute('INSERT INTO users(id, messages) VALUES(?, ?)', (member.id, 0))
+            self.db.commit()
+
+    @commands.Cog.listener()
     async def on_message(self, message):
         author = message.author
 
@@ -30,7 +39,6 @@ class Events(commands.Cog):
 
         self.cs.execute('UPDATE users SET messages=? + ? WHERE id=?', (self.cs.execute('SELECT messages FROM users WHERE id=?', (author.id, )).fetchall()[0][0], 1, author.id))
         self.db.commit()
-        print("{0.name} now has {1} messages".format(author, self.cs.execute("SELECT messages FROM users WHERE id=?", (author.id, )).fetchall()[0][0]))
 
 def setup(bot):
     bot.add_cog(Events(bot))

@@ -1,6 +1,8 @@
 import os
 from discord.ext import commands
 
+os.system("clear")
+
 print("Starting..", end = "\n\n")
 
 print("Available Extensions:")
@@ -29,14 +31,6 @@ else:
     for extension in os.listdir('extensions'):
         if extension in extensions_list:
             bot_client.load_extension(f"extensions.{extension[:-3]}")
-
-"""
-# for c+p in da future
-# im lazy lol
-
-self.db = sqlite3.connect('database.db')
-self.cs = self.db.cursor()
-"""
 
 # god bless
 bot_client.run("")

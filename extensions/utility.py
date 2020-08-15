@@ -1,7 +1,7 @@
-from utils import database as db
-from datetime import datetime
 import discord
 from discord.ext import commands
+from utils import database as db
+from datetime import datetime
 
 class Utility(commands.Cog):
     

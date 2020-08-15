@@ -1,5 +1,8 @@
 import sqlite3
 
+# todo: make sure to make the database per guild based.
+#       just in case.
+
 connection = sqlite3.connect("database.db")
 cursor = connection.cursor()
 
@@ -24,7 +27,7 @@ def setup_users(bot, members):
 
         add_user(member)
 
-def add_message(member):
+def update_message_count(member):
     cursor.execute("UPDATE users SET messages=? + ? WHERE id=?", (cursor.execute("SELECT messages FROM users WHERE id=?", (member.id, )).fetchall()[0][0], 1, member.id))
     commit()
 

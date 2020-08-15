@@ -1,4 +1,5 @@
 from utils import database as db
+from utils.messaging import formatter
 from discord.ext import commands
 
 class Events(commands.Cog):
@@ -26,7 +27,28 @@ class Events(commands.Cog):
         if author.id == self.bot.user.id:
             return
 
-        db.add_message(author)
+        db.update_message_count(author)
+
+class ErrorHandling(commands.Cog):
+
+    def __init__(self, bot):
+        self.bot = bot
+
+    @commands.Cog.listener()
+    async def on_command_error(self, ctx, error):
+        error = getattr(error, "original", error)
+
+        if isinstance(error, commands.CommandNotFound):
+            pass
+        elif isinstance(error, commands.MissingRequiredArgument):
+            await ctx.send(
+                formatter(f"{formatter(error.param.name).block()} is missing\n"
+                            "Run the help command to see required arguments.").qoute()
+                )
+        else:
+            # todo: send to #command-error channel
+            await ctx.send(formatter(f"Something went wrong.. {formatter(error).codeblock()}").qoute)
 
 def setup(bot):
     bot.add_cog(Events(bot))
+    bot.add_cog(ErrorHandling(bot))

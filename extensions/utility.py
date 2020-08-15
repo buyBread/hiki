@@ -1,7 +1,7 @@
-import discord
+import discord, asyncio
 from discord.ext import commands
 from utils import database as db
-from datetime import datetime
+from utils.messaging import formatter
 
 class Utility(commands.Cog):
     
@@ -9,16 +9,20 @@ class Utility(commands.Cog):
         self.bot = bot
 
     @commands.command()
-    async def messages(self, ctx, *, member: discord.Member=None):
+    async def profile(self, ctx, *, member: discord.Member=None):
+        await asyncio.sleep(0.8) # let the database catch up
+
         if member == None:
             member = ctx.author
 
         embed = discord.Embed(
-            title="Message Count",
-            description=f"I've seen **{member}** send {db.get_message_count(member)} messages.",
-            color=member.top_role.color,
-            timestamp=datetime.now()
-            )
+            title=formatter(f"{member}").bold(),
+            description=f"I've seen **{db.get_message_count(member)}** messages sent by **{member.name}**.\n"
+            f"Level: **{int(db.get_experience(member) / 50) + 1}**\n"
+            f"Experience: **{db.get_experience(member):.2f}**\n",
+            color=0x36393F,
+            timestamp=ctx.message.created_at
+        )
         embed.set_thumbnail(url=member.avatar_url)
 
         await ctx.send(embed=embed)

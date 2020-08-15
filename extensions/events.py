@@ -2,7 +2,7 @@ from utils import database as db
 from utils.messaging import formatter
 from discord.ext import commands
 
-class Events(commands.Cog):
+class GeneralEvents(commands.Cog):
     
     def __init__(self, bot):
         self.bot = bot
@@ -27,7 +27,7 @@ class Events(commands.Cog):
         if author.id == self.bot.user.id:
             return
 
-        db.update_message_count(author)
+        db.update_user(author)
 
 class ErrorHandling(commands.Cog):
 
@@ -36,19 +36,35 @@ class ErrorHandling(commands.Cog):
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
-        error = getattr(error, "original", error)
+        error = getattr(error, 'original', error)
 
         if isinstance(error, commands.CommandNotFound):
             pass
         elif isinstance(error, commands.MissingRequiredArgument):
-            await ctx.send(
-                formatter(f"{formatter(error.param.name).block()} is missing\n"
-                            "Run the help command to see required arguments.").qoute()
-                )
+            await ctx.send(formatter(f"{formatter(error.param.name).block()} is missing\n").qoute())
         else:
-            # todo: send to #command-error channel
-            await ctx.send(formatter(f"Something went wrong.. {formatter(error).codeblock()}").qoute)
+            await ctx.send(formatter(f"Something went wrong.. {formatter(error).codeblock()}").qoute())
+
+import asyncio # for sleeping certain events
+from discord import AuditLogAction
+
+# relays audit log information + custom events
+class AuditLog(commands.Cog):
+
+    def __init__(self, bot):
+        self.bot = bot
+
+    # todo:
+    # - log bans
+    # - log kicks
+    # - log message edits
+    # - log message deletes
+    # - log message deletes in bulk:
+    #   -> upon running clear send every message that has been deleted
+    # - log commands
+    # - log command errors 
 
 def setup(bot):
-    bot.add_cog(Events(bot))
+    bot.add_cog(GeneralEvents(bot))
     bot.add_cog(ErrorHandling(bot))
+    bot.add_cog(AuditLog(bot))

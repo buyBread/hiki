@@ -1,4 +1,5 @@
 from utils import database as db
+from utils.cosmetic import change_presence
 from utils.messaging import formatter
 from discord.ext import commands
 
@@ -10,6 +11,7 @@ class GeneralEvents(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         print("Ready!", end = "\n\n")
+        await change_presence(self.bot, "listening", "Subwoofer Lullaby")
 
         db.setup_users(self.bot, self.bot.get_all_members())
 
@@ -27,7 +29,12 @@ class GeneralEvents(commands.Cog):
         if author.id == self.bot.user.id:
             return
 
+        old_level = db.get_level(author)
         db.update_user(author)
+        new_level = db.get_level(author)
+
+        if (old_level < new_level):
+            await message.channel.send(formatter(f"{author.mention} **{new_level}**!").qoute())
 
 class ErrorHandling(commands.Cog):
 

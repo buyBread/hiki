@@ -23,7 +23,10 @@ elif extensions_list.lower() == "all":
 else:
     extensions_list = extensions_list.split()
 
-bot_client = commands.Bot(command_prefix="!")
+bot_client = commands.Bot(command_prefix=">")
+
+# ugly
+bot_client.remove_command("help")
 
 for extension in os.listdir("extensions"):
     extension = extension[:-3]
@@ -33,9 +36,6 @@ for extension in os.listdir("extensions"):
     else:
         if extension in extensions_list:
             bot_client.load_extension(f"extensions.{extension}")
-
-# ugly
-bot_client.remove_command("help")
 
 # logging
 logger = logging.getLogger("discord")

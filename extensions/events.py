@@ -27,7 +27,6 @@ class Events(commands.Cog):
             return
 
         db.add_message(author)
-        print("I've seen {0} send {1} messages".format(author, db.cursor.execute('SELECT messages FROM users WHERE id=?', (author.id, )).fetchall()[0][0]))
 
 def setup(bot):
     bot.add_cog(Events(bot))

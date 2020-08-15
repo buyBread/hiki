@@ -1,6 +1,6 @@
 import sqlite3
 
-connection = sqlite3.connect('database.db')
+connection = sqlite3.connect("database.db")
 cursor = connection.cursor()
 
 def commit():
@@ -8,9 +8,9 @@ def commit():
 
 def add_user(member):
     # if a member's id is not in the table
-    if len(cursor.execute('SELECT * FROM users WHERE id=?', (member.id, )).fetchall()) == 0:
+    if len(cursor.execute("SELECT * FROM users WHERE id=?", (member.id, )).fetchall()) == 0:
         # add them
-        cursor.execute('INSERT INTO users(id, messages) VALUES(?, ?)', (member.id, 0))
+        cursor.execute("INSERT INTO users(id, messages) VALUES(?, ?)", (member.id, 0))
         commit()
 
 def setup_users(bot, members):
@@ -25,5 +25,8 @@ def setup_users(bot, members):
         add_user(member)
 
 def add_message(member):
-    cursor.execute('UPDATE users SET messages=? + ? WHERE id=?', (cursor.execute('SELECT messages FROM users WHERE id=?', (member.id, )).fetchall()[0][0], 1, member.id))
+    cursor.execute("UPDATE users SET messages=? + ? WHERE id=?", (cursor.execute("SELECT messages FROM users WHERE id=?", (member.id, )).fetchall()[0][0], 1, member.id))
     commit()
+
+def get_message_count(member):
+    return cursor.execute("SELECT messages FROM users WHERE id=?", (member.id, )).fetchall()[0][0]

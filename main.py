@@ -28,9 +28,12 @@ if load_all_extensions:
     for extension in os.listdir("extensions"):
 	    bot_client.load_extension(f"extensions.{extension[:-3]}")
 else:
-    for extension in os.listdir('extensions'):
+    for extension in os.listdir("extensions"):
         if extension in extensions_list:
             bot_client.load_extension(f"extensions.{extension[:-3]}")
+
+# ugly
+bot_client.remove_command("help")
 
 # god bless
 bot_client.run("")

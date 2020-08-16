@@ -47,4 +47,4 @@ handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s %(name)s: %(me
 logger.addHandler(handler)
 
 # god bless
-bot_client.run("")
+bot_client.run(os.getenv("BOT_TOKEN"))

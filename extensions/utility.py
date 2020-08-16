@@ -45,7 +45,7 @@ class HelpfulCommands(commands.Cog, name="Help"):
                 title="Help Page",
                 description=
                 "This is a list of available commands.\n"
-                "Enter a command to see it's usage.",
+                f"Use `{ctx.prefix}help [command]` to see it's usage.",
                 color=0x36393F,
                 timestamp=ctx.message.created_at
             )
@@ -67,8 +67,8 @@ class HelpfulCommands(commands.Cog, name="Help"):
                 if commands != []:
                     embed.add_field(
                         name=formatter(cog.qualified_name).bold(),
-                        value="\n ".join([f"{command} - {command.help}" for command in commands]),
-                        inline=False
+                        value="  ".join([formatter(command).block() for command in commands]),
+                        inline=True
                     )
 
                 commands.clear() # clear the commands list once we're ready to iterate the next cog
@@ -76,7 +76,7 @@ class HelpfulCommands(commands.Cog, name="Help"):
             await ctx.send(embed=embed)
         else:
             cmd = self.bot.get_command(cmd)
-            await ctx.send(formatter(f"{cmd} {'  '.join(f'{formatter(x).block()}' for x in cmd.usage.split())} - {cmd.help}").qoute())
+            await ctx.send(formatter(f"{cmd} {'  '.join(f'{formatter(arg).block()}' for arg in cmd.usage.split())} - {cmd.help}").qoute())
 
 def setup(bot):
     bot.add_cog(UserUtility(bot))

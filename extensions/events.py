@@ -1,6 +1,6 @@
 from utils import database as db
 from utils.cosmetic import change_presence
-from utils.messaging import formatter
+from utils.messaging import formatter, channel
 from discord.ext import commands
 
 class GeneralEvents(commands.Cog):
@@ -13,28 +13,28 @@ class GeneralEvents(commands.Cog):
         print("Ready!", end = "\n\n")
         await change_presence(self.bot, "listening", "Subwoofer Lullaby")
 
-        db.setup_users(self.bot, self.bot.get_all_members())
+        db.setup_users(self.bot.get_all_members())
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
-        if member.id == self.bot.user.id:
+        if member.bot:
             return
 
         db.add_user(member)
 
     @commands.Cog.listener()
     async def on_message(self, message):
-        author = message.author
-
-        if author.id == self.bot.user.id:
+        if message.author.bot:
             return
+
+        author = message.author
 
         old_level = db.get_level(author)
         db.update_user(author)
         new_level = db.get_level(author)
 
         if (old_level < new_level):
-            await message.channel.send(formatter(f"{author.mention} **{new_level}**!").qoute())
+            await message.channel.send(formatter(f"{author.mention} **{new_level}**").qoute())
 
 class ErrorHandling(commands.Cog):
 
@@ -52,8 +52,9 @@ class ErrorHandling(commands.Cog):
         else:
             await ctx.send(formatter(f"Something went wrong.. {formatter(error).codeblock()}").qoute())
 
-import asyncio # for sleeping certain events
+import discord, asyncio # for sleeping certain events
 from discord import AuditLogAction
+from datetime import datetime
 
 # relays audit log information + custom events
 class AuditLog(commands.Cog):
@@ -62,14 +63,83 @@ class AuditLog(commands.Cog):
         self.bot = bot
 
     # todo:
-    # - log bans
-    # - log kicks
-    # - log message edits
-    # - log message deletes
-    # - log message deletes in bulk:
-    #   -> upon running clear send every message that has been deleted
+    # - log message deletes in bulk (not on_bulk_message_delete):
+    #   -> upon running "clear" send every message that has been deleted
     # - log commands
     # - log command errors 
+
+    @commands.Cog.listener()
+    async def on_member_join(self, member):
+        if member.bot:
+            return
+
+        embed = discord.Embed(title=f"{member} has joined the server.", timestamp=datetime.utcnow())
+        embed.description = f"User ID: {member.id}"
+        embed.color=0x36393F
+
+        await channel(member.guild, "audit").send_embed(embed)
+
+    @commands.Cog.listener()
+    async def on_member_remove(self, member):
+        if member.bot:
+            return
+
+        embed = discord.Embed(title=f"{member} has left the server.", timestamp=datetime.utcnow())
+        embed.description = f"User ID: {member.id}"
+        embed.color = 0x36393F
+
+        async for entry in member.guild.audit_logs(limit=1):
+            if entry.action == AuditLogAction.ban:
+                if entry.target == member:
+                    embed.color = 0xFF3030
+                    embed.add_field(name="Reason", value=f"Banned by {entry.user.mention}", inline=False)
+            elif entry.action == AuditLogAction.kick:
+                if entry.target == member:
+                    embed.color = 0xFCDB03
+                    embed.add_field(name="Reason", value=f"Kicked by {entry.user.mention}", inline=False)
+
+        await channel(member.guild, "audit").send_embed(embed)
+
+    @commands.Cog.listener()
+    async def on_message_edit(self, before, after):
+        if after.author.bot:
+            return
+        if len(before.content) == 0:
+            return
+        if len(after.embeds) != 0:
+            return
+
+        embed = discord.Embed(title=f"{after.author} has edited a message.", timestamp=datetime.utcnow())
+        embed.description = f"User ID: {after.author.id}"
+        embed.color = 0xACF00E
+        
+        embed.add_field(name="Before", value=before.content, inline=False)
+        embed.add_field(name="After", value=after.content, inline=False)
+        
+        await channel(after.guild, "audit").send_embed(embed)
+
+    @commands.Cog.listener()
+    async def on_message_delete(self, message):
+        # todo: don't run any of this if a "clear" command was invoked
+
+        if message.author.bot:
+            return
+        if len(message.embeds) != 0:
+            return
+
+        embed = discord.Embed(title=f"{message.author} has deleted a message.", timestamp=datetime.utcnow())
+        embed.description = f"User ID: {message.author.id}"
+        embed.color = 0xEE28FC
+
+        embed.add_field(name="Content", value=message.content, inline=False)
+
+        async for entry in message.guild.audit_logs(limit=1):
+            if entry.action == AuditLogAction.message_delete:
+                if entry.target == message.author:
+                    embed.title = f"A message by {message.author} has been deleted."
+                    embed.add_field(name="Responsible", value=entry.user, inline=False)
+
+        await channel(message.guild, "audit").send_embed(embed)
 
 def setup(bot):
     bot.add_cog(GeneralEvents(bot))

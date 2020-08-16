@@ -2,6 +2,7 @@ import discord, asyncio
 from discord.ext import commands
 from utils import database as db
 from utils.messaging import formatter
+from datetime import datetime
 
 class UserUtility(commands.Cog, name="User Utility"):
     
@@ -22,9 +23,9 @@ class UserUtility(commands.Cog, name="User Utility"):
             f"I've seen **{db.get_message_count(member)}** messages sent by **{member.name}**.\n"
             f"Level: **{db.get_level(member)}**\n"
             f"Experience: **{(((db.get_level(member) - 1) * 50) + db.get_experience(member)):.2f}**",
-            color=0x36393F,
-            timestamp=ctx.message.created_at
+            timestamp=datetime.utcnow()
         )
+        embed.color = 0x36393F
         embed.set_thumbnail(url=member.avatar_url)
 
         await ctx.send(embed=embed)

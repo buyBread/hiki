@@ -17,14 +17,14 @@ def add_user(member):
         cursor.execute("INSERT INTO users(id, messages, exp, lvl) VALUES(?, ?, ?, ?)", (member.id, 0, 0, 1))
         commit()
 
-def setup_users(bot, members):
+def setup_users(members):
     # create a users table if it does not exist
     cursor.execute("CREATE TABLE IF NOT EXISTS users(id integer NOT NULL, messages integer NOT NULL, exp real NOT NULL, lvl integer NOT NULL)")
     
     # add all members to the users table
     for member in members:
-        if member.id == bot.user.id:
-            return
+        if member.bot:
+            pass # don't add bots to the database
 
         add_user(member)
 

@@ -69,6 +69,7 @@ class AuditLog(commands.Cog):
     # todo:
     # - log commands
     # - log command errors 
+    # - log guild changes
 
     @commands.Cog.listener()
     async def on_member_join(self, member):

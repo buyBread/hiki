@@ -12,13 +12,10 @@ for extension in os.listdir("extensions"):
 load_all_extensions = False
 
 print("Extensions to load (Default=All):")
-print("==> ", end="")
-extensions_list = input()
+extensions_list = input("==> ")
 print() # newline
 
-if extensions_list == "":
-    load_all_extensions = True
-elif extensions_list.lower() == "all":
+if extensions_list == "" or extensions_list == "all":
     load_all_extensions = True
 else:
     extensions_list = extensions_list.split()

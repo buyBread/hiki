@@ -30,6 +30,24 @@ class UserUtility(commands.Cog, name="User Utility"):
 
         await ctx.send(embed=embed)
 
+    @commands.command(aliases=["leaderboard"])
+    async def top(self, ctx):
+        """Displays the Top 5 members in the server."""
+        await asyncio.sleep(0.6) # let the database catch up
+        
+        embed = discord.Embed(title="Top 5 members", timestamp=datetime.utcnow())
+        embed.color = 0x36393F
+
+        description = ""
+        top_users = db.get_top_users(self.bot.get_all_members())
+        for i in range(0, 5):
+            user_data = top_users[i]
+            description += f"{i+1}. **{user_data[0]}** (Level: {db.get_level(user_data[0])}) - **{user_data[1]:.2f}** Experience\n"
+
+        embed.description = description
+
+        await ctx.send(embed=embed)
+
 class HelpfulCommands(commands.Cog, name="Help"):
 
     def __init__(self, bot):
@@ -45,11 +63,10 @@ class HelpfulCommands(commands.Cog, name="Help"):
                 title="Help Page",
                 description=
                 "This is a list of available commands.\n"
-                f"Use `{ctx.prefix}help [command]` to see it's usage.",
-                color=0x36393F,
-                timestamp=ctx.message.created_at
+                f"Use `{ctx.prefix}help [command]` to see it's usage.", 
+                timestamp=datetime.utcnow()
             )
-            embed.set_thumbnail(url=self.bot.user.avatar_url)
+            embed.color = 0x36393F
 
             commands = []
 
@@ -66,7 +83,7 @@ class HelpfulCommands(commands.Cog, name="Help"):
 			
                 if commands != []:
                     embed.add_field(
-                        name=formatter(cog.qualified_name).bold(),
+                        name=cog.qualified_name,
                         value="  ".join([formatter(command).block() for command in commands]),
                         inline=True
                     )
@@ -76,7 +93,22 @@ class HelpfulCommands(commands.Cog, name="Help"):
             await ctx.send(embed=embed)
         else:
             cmd = self.bot.get_command(cmd)
-            await ctx.send(formatter(f"{cmd} {'  '.join(f'{formatter(arg).block()}' for arg in cmd.usage.split())} - {cmd.help}").qoute())
+
+            if cmd.usage is None:
+                await ctx.send(formatter(f"{cmd} - {cmd.help}").qoute())
+            else:
+                await ctx.send(formatter(f"{cmd} {'  '.join(f'{formatter(arg).block()}' for arg in cmd.usage.split())} - {cmd.help}").qoute())
+
+    @commands.command()
+    async def info(self, ctx):
+        embed = discord.Embed(
+            title=self.bot.user.name,
+            description="I'm powered by [discord.py](https://github.com/Rapptz/discord.py)."
+        )
+        embed.color = 0x36393F
+        embed.set_footer(text="desu")
+
+        await ctx.send(embed=embed)
 
 def setup(bot):
     bot.add_cog(UserUtility(bot))

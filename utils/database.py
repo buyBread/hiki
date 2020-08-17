@@ -35,6 +35,14 @@ def get_experience(member):
 def get_level(member):
     return cursor.execute(f"SELECT lvl FROM users WHERE id={member.id}").fetchone()[0]
 
+def get_top_users(members):
+    users = []
+    for member in members:
+        users.append([member, (((get_level(member) - 1) * 50) + get_experience(member))])
+
+    users.sort(key=lambda x: x[1], reverse=True)
+    return users
+    
 def update_message_count(member):
     cursor.execute(f"SELECT messages FROM users WHERE id={member.id}")
     cursor.execute(f"UPDATE users SET messages={get_message_count(member) + 1} WHERE id={member.id}")

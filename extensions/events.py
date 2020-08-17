@@ -32,7 +32,15 @@ class GeneralEvents(commands.Cog):
 
         db.update_message_count(author)
 
-        if len(message.content) > randint(2, 12):
+        # to somewhat mitigate spam
+        should_add_xp = False
+        if len(message.content) > randint(4, 12):
+            should_add_xp = True
+        elif len(message.content) == 0:
+            if len(message.attachments) > 0:
+                should_add_xp = True
+
+        if should_add_xp:
             old_level = db.get_level(author)
             db.update_level(author)
             new_level = db.get_level(author)

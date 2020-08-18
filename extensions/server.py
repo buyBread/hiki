@@ -24,6 +24,10 @@ class Moderation(commands.Cog):
 
         self.bot.dispatch("clear_invoked", limit, ctx.channel, ctx.author, log_file_name)       
 
+class ServerManagement(commands.Cog):
+
+    # todo: do something here later
+
 def setup(bot):
     bot.add_cog(Moderation(bot))
     

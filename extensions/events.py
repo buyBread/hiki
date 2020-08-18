@@ -33,14 +33,14 @@ class GeneralEvents(commands.Cog):
         db.update_message_count(author)
 
         # to somewhat mitigate spam
-        should_add_xp = False
+        should_update_level = False
         if len(message.content) > randint(4, 12):
-            should_add_xp = True
+            should_update_level = True
         elif len(message.content) == 0:
             if len(message.attachments) > 0:
-                should_add_xp = True
+                should_update_level = True
 
-        if should_add_xp:
+        if should_update_level:
             old_level = db.get_level(author)
             db.update_level(author)
             new_level = db.get_level(author)
@@ -86,7 +86,7 @@ class AuditLog(commands.Cog):
 
         embed = discord.Embed(title=f"{member} has joined the server.", timestamp=datetime.utcnow())
         embed.description = f"User ID: {member.id}"
-        embed.color=0x36393F
+        embed.color=0x2F3136
 
         await channel(member.guild, "audit").send_embed(embed)
 
@@ -97,7 +97,7 @@ class AuditLog(commands.Cog):
 
         embed = discord.Embed(title=f"{member} has left the server.", timestamp=datetime.utcnow())
         embed.description = f"User ID: {member.id}"
-        embed.color = 0x36393F
+        embed.color = 0x2F3136
 
         async for entry in member.guild.audit_logs(limit=1):
             if entry.action == AuditLogAction.ban:
@@ -158,7 +158,7 @@ class AuditLog(commands.Cog):
     async def on_clear_invoked(self, limit, chan, user, log_file):
         embed = discord.Embed(title=f"{user} cleared {limit} messages.", timestamp=datetime.utcnow())
         embed.description = f"User ID: {user.id}"
-        embed.color=0x36393F
+        embed.color= 0xFF5EBC
 
         await channel(chan.guild, "audit").send_embed(embed)
         await channel(chan.guild, "audit").send_file(f"clear_logs/{log_file}")

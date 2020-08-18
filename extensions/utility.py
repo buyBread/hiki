@@ -10,37 +10,57 @@ class UserUtility(commands.Cog, name="User Utility"):
         self.bot = bot
 
     @commands.command(usage="member")
-    async def profile(self, ctx, *, member: discord.Member=None):
-        """Display a Member's profile."""
-        await asyncio.sleep(0.6) # let the database catch up
-
+    async def avatar(self, ctx, *, member: discord.Member=None):
+        """Get a Member's profile picture."""
         if member == None:
             member = ctx.author
 
         embed = discord.Embed(
-            title=formatter(f"{member}").bold(),
+            title=f"Avatar of {member}",
+            description=f"[Click here]({member.avatar_url_as(format='jpeg')}) for the link.",
+            timestamp=datetime.utcnow()
+        )
+        embed.color = 0x2F3136
+        embed.set_image(url=member.avatar_url_as(format="jpeg"))
+
+        await ctx.send(embed=embed)
+
+    @commands.command(usage="member")
+    async def profile(self, ctx, *, member: discord.Member=None):
+        """Display a Member's profile."""
+        if member == None:
+            member = ctx.author
+
+        if member.bot:
+            await ctx.send("Bot's don't have profiles.. ;~;")
+            return
+
+        await asyncio.sleep(0.6) # let the database catch up
+
+        embed = discord.Embed(
+            title=f"Profile of {member}",
             description=
             f"I've seen **{db.get_message_count(member)}** messages sent by **{member.name}**.\n"
             f"Level: **{db.get_level(member)}**\n"
             f"Experience: **{(((db.get_level(member) - 1) * 50) + db.get_experience(member)):.2f}**",
             timestamp=datetime.utcnow()
         )
-        embed.color = 0x36393F
+        embed.color = 0x2F3136
         embed.set_thumbnail(url=member.avatar_url)
 
         await ctx.send(embed=embed)
 
     @commands.command(aliases=["leaderboard"])
     async def top(self, ctx):
-        """Displays the Top 5 members in the server."""
+        """Displays the Top 10 members in the server."""
         await asyncio.sleep(0.6) # let the database catch up
         
-        embed = discord.Embed(title="Top 5 members", timestamp=datetime.utcnow())
-        embed.color = 0x36393F
+        embed = discord.Embed(title="Top 10 members", timestamp=datetime.utcnow())
+        embed.color = 0x2F3136
 
         description = ""
         top_users = db.get_top_users(self.bot.get_all_members())
-        for i in range(0, 5):
+        for i in range(0, 10):
             user_data = top_users[i]
             description += f"{i+1}. **{user_data[0]}** (Level: {db.get_level(user_data[0])}) - **{user_data[1]:.2f}** Experience\n"
 
@@ -66,7 +86,7 @@ class HelpfulCommands(commands.Cog, name="Help"):
                 f"Use `{ctx.prefix}help [command]` to see it's usage.", 
                 timestamp=datetime.utcnow()
             )
-            embed.color = 0x36393F
+            embed.color = 0x2F3136
 
             commands = []
 
@@ -105,7 +125,7 @@ class HelpfulCommands(commands.Cog, name="Help"):
             title=self.bot.user.name,
             description="I'm powered by [discord.py](https://github.com/Rapptz/discord.py)."
         )
-        embed.color = 0x36393F
+        embed.color = 0x2F3136
         embed.set_footer(text="desu")
 
         await ctx.send(embed=embed)

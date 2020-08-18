@@ -11,9 +11,10 @@ def commit():
 def add_user(member):
     # if a member's id is not in the table
     if len(cursor.execute(f"SELECT * FROM users WHERE id={member.id}").fetchall()) == 0:
-        # add them
-        cursor.execute(f"INSERT INTO users(id, messages, exp, lvl) VALUES({member.id}, {0}, {0}, {1})")
-        commit()
+        if member.bot == False:
+            # add them
+            cursor.execute(f"INSERT INTO users(id, messages, exp, lvl) VALUES({member.id}, {0}, {0}, {1})")
+            commit()
 
 def setup_users(members):
     # create a users table if it does not exist
@@ -21,9 +22,6 @@ def setup_users(members):
     
     # add all members to the users table
     for member in members:
-        if member.bot:
-            pass # don't add bots to the database
-
         add_user(member)
 
 def get_message_count(member):
@@ -38,7 +36,8 @@ def get_level(member):
 def get_top_users(members):
     users = []
     for member in members:
-        users.append([member, (((get_level(member) - 1) * 50) + get_experience(member))])
+        if member.bot == False:
+            users.append([member, (((get_level(member) - 1) * 50) + get_experience(member))])
 
     users.sort(key=lambda x: x[1], reverse=True)
     return users

@@ -32,7 +32,7 @@ class UserUtility(commands.Cog, name="User Utility"):
             member = ctx.author
 
         if member.bot:
-            await ctx.send("Bot's don't have profiles.. ;~;")
+            await ctx.send("Bot's don't have profiles.. :(")
             return
 
         await asyncio.sleep(0.6) # let the database catch up
@@ -104,7 +104,7 @@ class HelpfulCommands(commands.Cog, name="Help"):
                 if commands != []:
                     embed.add_field(
                         name=cog.qualified_name,
-                        value="  ".join([formatter(command).block() for command in commands]),
+                        value=" ".join([formatter(command).block() for command in commands]),
                         inline=True
                     )
 
@@ -114,10 +114,18 @@ class HelpfulCommands(commands.Cog, name="Help"):
         else:
             cmd = self.bot.get_command(cmd)
 
+            if cmd is None:
+                await ctx.send("Unknown command.")
+                return
+
+            if cmd.hidden == True:
+                await ctx.send("This command is hidden.")
+                return
+
             if cmd.usage is None:
                 await ctx.send(formatter(f"{cmd} - {cmd.help}").qoute())
             else:
-                await ctx.send(formatter(f"{cmd} {'  '.join(f'{formatter(arg).block()}' for arg in cmd.usage.split())} - {cmd.help}").qoute())
+                await ctx.send(formatter(f"{cmd} {' '.join(f'{formatter(arg).block()}' for arg in cmd.usage.split())} - {cmd.help}").qoute())
 
     @commands.command()
     async def info(self, ctx):

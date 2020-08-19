@@ -1,8 +1,11 @@
+import discord, os
+from discord import AuditLogAction
+from discord.ext import commands
+from random import randint
+from datetime import datetime
 from utils import database as db
 from utils.cosmetic import change_presence
 from utils.messaging import formatter, channel
-from discord.ext import commands
-from random import randint
 
 class GeneralEvents(commands.Cog):
     
@@ -63,10 +66,6 @@ class ErrorHandling(commands.Cog):
             await ctx.send(formatter(f"{formatter(error.param.name).block()} is missing\n").qoute())
         else:
             await ctx.send(formatter(f"Something went wrong.. {formatter(error).codeblock()}").qoute())
-
-import discord, os
-from discord import AuditLogAction
-from datetime import datetime
 
 # relays audit log information + custom events
 class AuditLog(commands.Cog):

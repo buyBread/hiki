@@ -50,7 +50,7 @@ def update_message_count(member):
 
 def update_level(member):    
     cursor.execute(f"SELECT exp FROM users WHERE id={member.id}")
-    cursor.execute(f"UPDATE users SET exp={get_experience(member) + (random.uniform(2, 4) / (get_level(member) / 2))} WHERE id={member.id}")
+    cursor.execute(f"UPDATE users SET exp={get_experience(member) + (random.uniform(1, 3) / (get_level(member) / 2))} WHERE id={member.id}")
 
     if (get_experience(member) > 50):
         cursor.execute(f"UPDATE users SET exp={get_experience(member) - 50} WHERE id={member.id}")

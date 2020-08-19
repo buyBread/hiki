@@ -26,6 +26,9 @@ class Moderation(commands.Cog):
 
 class ServerManagement(commands.Cog):
 
+    def __init__(self, bot):
+        self.bot = bot
+
     # todo: do something here later
 
 def setup(bot):

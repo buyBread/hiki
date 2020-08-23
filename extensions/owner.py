@@ -1,6 +1,6 @@
 import discord, requests
 from discord.ext import commands
-from utils.cosmetic import change_presence
+from utils import cosmetic
 
 class GeneralOwner(commands.Cog, command_attrs=dict(hidden=True)):
 
@@ -33,7 +33,7 @@ class BotProfile(commands.Cog, command_attrs=dict(hidden=True)):
 
     @change.command(name="presence")
     async def change_presence(self, ctx, type: str, *, text: str):
-        await change_presence(self.bot, type, text)
+        await cosmetic.change_presence(self.bot, type, text)
 
     @change.command(name="avatar")
     async def change_avatar(self, ctx, url: str = None):
@@ -47,6 +47,7 @@ class BotProfile(commands.Cog, command_attrs=dict(hidden=True)):
                 f.write(requests.get(url).content)            
             with open("/tmp/bot_avatar.jpg", "rb") as f:
                 await self.bot.user.edit(avatar=bytearray(f.read()))
+        # improper, fix later
         except:
             await ctx.send("Provide a URL or attachment.")
             return

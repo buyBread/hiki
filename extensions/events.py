@@ -80,6 +80,7 @@ class AuditLog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
+        # todo: tell which invite was used to join
         if member.bot:
             return
 

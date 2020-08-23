@@ -86,6 +86,8 @@ class CogManagement(commands.Cog, command_attrs=dict(hidden=True)):
 
         for cog in cogs:
             for obj in dir(events):
+                if obj == "db":
+                    pass
                 if obj in cog:
                     events_cogs.append(obj)
             for obj in dir(owner):
@@ -95,6 +97,8 @@ class CogManagement(commands.Cog, command_attrs=dict(hidden=True)):
                 if obj in cog:
                     server_cogs.append(obj)
             for obj in dir(utility):
+                if obj == "db":
+                    pass
                 if obj in cog:
                     utility_cogs.append(obj)
 

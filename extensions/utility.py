@@ -98,6 +98,8 @@ class HelpfulCommands(commands.Cog, name="Help"):
                         pass
                     elif command in commands:
                         pass
+                    elif command.parent != None:
+                        pass
                     else:
                         commands.append(command)
 			

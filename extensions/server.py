@@ -26,7 +26,7 @@ class Moderation(commands.Cog):
 
         self.bot.dispatch("clear_invoked", limit, ctx.channel, ctx.author, log_file_name)       
 
-class ServerManagement(commands.Cog):
+class GuildManagement(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
@@ -44,8 +44,8 @@ class ServerManagement(commands.Cog):
             embed.set_thumbnail(url=ctx.guild.icon_url)
 
             embed.add_field(
-                name="Available Commands",
-                value=" ".join(f'{formatter(x).block()}' for x in ctx.command.commands),
+                name="Guild Management Commands",
+                value="\n".join(f'{formatter(x).block()}' for x in ctx.command.commands),
                 inline=False
             )
 
@@ -76,7 +76,55 @@ class ServerManagement(commands.Cog):
 
         await ctx.send(formatter(f"Guild verification set to **{level.lower()}**.").qoute())
 
+    @guild.group(name="invites")
+    @commands.guild_only()
+    @commands.has_permissions(manage_guild=True)
+    async def guild_invites(self, ctx):
+        if ctx.invoked_subcommand == None:
+            embed = discord.Embed(title="Invites")
+            embed.description = f"Run `{ctx.prefix}guild invites delete [code]` to delete an invite."
+            embed.color = 0x2F3136
+            embed.set_thumbnail(url=ctx.guild.icon_url)
+
+            for invite in await ctx.guild.invites():
+                expiration = ""
+                if invite.max_age != 0:
+                    seconds = int(invite.max_age - (datetime.utcnow() - invite.created_at).total_seconds())
+                    minutes = 0
+                    hours = 0
+                
+                    while seconds > 60:
+                        minutes += 1
+                        if (minutes >= 60):
+                            minutes = 0
+                            hours += 1
+                        seconds -= 60
+
+                    expiration = f"{hours}h {minutes}min {seconds}s"
+                else:
+                    expiration = "Infinite"
+
+                embed.add_field(
+                    name=invite.code,
+                    value=f"Creator: {invite.inviter}\n"
+                    f"Expires in: {expiration}\n"
+                    f"Uses: {invite.uses}\n",
+                    inline=True
+                )
+
+            await ctx.send(embed=embed)
+
+    @guild_invites.command(name="delete")
+    @commands.guild_only()
+    @commands.has_permissions(manage_guild=True)
+    async def delete_guild_invite(self, ctx, code = None):
+        if code == None:
+            await ctx.send("Provide an invite code.")
+            return
+
+        await (await self.bot.fetch_invite(code)).delete()
+        await ctx.send(formatter(f"Invite **{code}** was deleted.").qoute())
+
 def setup(bot):
     bot.add_cog(Moderation(bot))
-    bot.add_cog(ServerManagement(bot))
-    
+    bot.add_cog(GuildManagement(bot))

@@ -26,13 +26,13 @@ class Moderation(commands.Cog):
 
         self.bot.dispatch("clear_invoked", limit, ctx.channel, ctx.author, log_file_name)       
 
-class GuildManagement(commands.Cog):
+class GuildManagement(commands.Cog, name="Guild Management"):
 
     def __init__(self, bot):
         self.bot = bot
 
-    # todo:
-    # - add invite manager
+    # add guild icon change
+    # add guild name change
 
     @commands.group()
     @commands.guild_only()
@@ -100,7 +100,7 @@ class GuildManagement(commands.Cog):
                             hours += 1
                         seconds -= 60
 
-                    expiration = f"{hours}h {minutes}min {seconds}s"
+                    expiration = f"{hours}h {minutes}m {seconds}s"
                 else:
                     expiration = "Infinite"
 

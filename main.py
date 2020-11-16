@@ -1,4 +1,4 @@
-import os, logging
+import os, logging, discord
 from discord.ext import commands
 
 os.system("clear")
@@ -20,7 +20,7 @@ if extensions_list == "" or extensions_list == "all":
 else:
     extensions_list = extensions_list.split()
 
-bot_client = commands.Bot(command_prefix=">")
+bot_client = commands.Bot(command_prefix=">", intents=discord.Intents.all())
 
 # ugly
 bot_client.remove_command("help")

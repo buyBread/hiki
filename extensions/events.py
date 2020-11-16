@@ -44,6 +44,7 @@ class GeneralEvents(commands.Cog):
                 should_update_level = True
 
         if should_update_level:
+            # store to a variable before updating the database
             old_level = db.get_level(author)
             db.update_level(author)
             new_level = db.get_level(author)
@@ -74,18 +75,15 @@ class AuditLog(commands.Cog):
         self.bot = bot
 
     # todo:
-    # - log commands
-    # - log command errors 
     # - log guild changes
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
-        # todo: tell which invite was used to join
         if member.bot:
             return
 
         embed = discord.Embed(title=f"{member} has joined the server.", timestamp=datetime.utcnow())
-        embed.description = f"User ID: {member.id}"
+        embed.description = f"User ID: {member.id}\nAccount Date: {member.created_at.strftime('%Y/%m/%d')}"
         embed.color=0x2F3136
 
         await channel(member.guild, "audit").send_embed(embed)
@@ -142,6 +140,7 @@ class AuditLog(commands.Cog):
 
         embed.add_field(name="Content", value=message.content, inline=False)
 
+        # get the responsible moderator and check if a bot deleted the message(s)
         async for entry in message.guild.audit_logs(limit=1):
             if entry.action == AuditLogAction.message_delete:
                 if entry.user.bot:
@@ -156,7 +155,7 @@ class AuditLog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_clear_invoked(self, limit, chan, user, log_file):
-        embed = discord.Embed(title=f"{user} cleared {limit} messages.", timestamp=datetime.utcnow())
+        embed = discord.Embed(title=f"{user} cleared {limit} messages in `#{chan}`.", timestamp=datetime.utcnow())
         embed.description = f"User ID: {user.id}"
         embed.color= 0xFF5EBC
 

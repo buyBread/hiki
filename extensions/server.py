@@ -26,6 +26,13 @@ class Moderation(commands.Cog):
 
         self.bot.dispatch("clear_invoked", limit, ctx.channel, ctx.author, log_file_name)       
 
+    async def cog_check(self, ctx):
+        if isinstance(ctx.channel, discord.DMChannel):
+            await ctx.send("You are not able to use Moderation commands in DMs")
+            return False
+
+        return True
+
 class GuildManagement(commands.Cog, name="Guild Management"):
 
     def __init__(self, bot):
@@ -124,6 +131,13 @@ class GuildManagement(commands.Cog, name="Guild Management"):
 
         await (await self.bot.fetch_invite(code)).delete()
         await ctx.send(formatter(f"Invite **{code}** was deleted.").qoute())
+
+    async def cog_check(self, ctx):
+        if isinstance(ctx.channel, discord.DMChannel):
+            await ctx.send("You are not able to use Guild Management commands in DMs")
+            return False
+
+        return True
 
 def setup(bot):
     bot.add_cog(Moderation(bot))

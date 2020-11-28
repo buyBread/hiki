@@ -134,8 +134,8 @@ class DatabaseManagement(commands.Cog, command_attrs=dict(hidden=True)):
         self.bot = bot
 
     # todo:
-    # - add database reset
-    # - add database value modification
+    # - add guild database reset
+    # - add guild database value modification
 
     async def cog_check(self, ctx):
         return await self.bot.is_owner(ctx.author)  

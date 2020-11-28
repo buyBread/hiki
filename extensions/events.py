@@ -15,7 +15,7 @@ class GeneralEvents(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         print("Ready!", end = "\n\n")
-        await change_presence(self.bot, "listening", "Subwoofer Lullaby")
+        await change_presence(self.bot, "watching", "for >help")
 
         db.setup_users(self.bot.get_all_members())
 

@@ -28,14 +28,14 @@ class UserUtility(commands.Cog, name="User Utility"):
     @commands.command(usage="member")
     async def profile(self, ctx, *, member: discord.Member=None):
         """Display a Member's profile."""
+        await asyncio.sleep(1) # let the database catch up
+
         if member == None:
             member = ctx.author
 
         if member.bot:
             await ctx.send("Bot's don't have profiles.. :(")
             return
-
-        await asyncio.sleep(0.6) # let the database catch up
 
         embed = discord.Embed(
             title=f"Profile of {member}",
@@ -68,13 +68,6 @@ class UserUtility(commands.Cog, name="User Utility"):
 
         await ctx.send(embed=embed)
 
-class HelpfulCommands(commands.Cog, name="Help"):
-
-    def __init__(self, bot):
-        self.bot = bot
-
-    # todo: make this not suck and introduce more help commands
-
     @commands.command(usage="command")
     async def help(self, ctx, cmd = None):
         """Displays and shows usage of available commands."""
@@ -90,6 +83,10 @@ class HelpfulCommands(commands.Cog, name="Help"):
 
             commands = []
 
+            general_commands = []
+            mod_commands = []
+            music_commands = []
+
             for cog in self.bot.cogs: # this doesn't give an actual cog
                 cog = self.bot.get_cog(cog) # so get it here
 
@@ -101,17 +98,26 @@ class HelpfulCommands(commands.Cog, name="Help"):
                     elif command.parent != None:
                         pass
                     else:
-                        commands.append(command)
+                        commands.append(str(command))
 			
-                if commands != []:
-                    embed.add_field(
-                        name=cog.qualified_name,
-                        value=" ".join([formatter(command).block() for command in commands]),
-                        inline=True
-                    )
+                if cog.qualified_name in ["User Utility"]:
+                    general_commands.extend(commands)
+                    commands.clear()
+                elif cog.qualified_name in ["Moderation", "Guild Management"]:
+                    mod_commands.extend(commands)
+                    commands.clear()
+                elif cog.qualified_name in ["Music"]:
+                    music_commands.extend(commands)
+                    commands.clear()
+                else:
+                    commands.clear()
 
-                commands.clear() # clear the commands list once we're ready to iterate the next cog
-		
+            embed.set_thumbnail(url=self.bot.user.avatar_url)
+            
+            embed.add_field(name="General Commands", value=formatter("\n" + "\n".join(general_commands)).codeblock(), inline=True)
+            embed.add_field(name="Mod Commands", value=formatter("\n" + "\n".join(mod_commands)).codeblock(), inline=True)
+            embed.add_field(name="Music Commands", value=formatter("\n" + "\n".join(music_commands)).codeblock(), inline=True)
+
             await ctx.send(embed=embed)
         else:
             cmd = self.bot.get_command(cmd)
@@ -142,4 +148,3 @@ class HelpfulCommands(commands.Cog, name="Help"):
 
 def setup(bot):
     bot.add_cog(UserUtility(bot))
-    bot.add_cog(HelpfulCommands(bot))

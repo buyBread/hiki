@@ -1,6 +1,6 @@
 import sqlite3, random
 
-# single-guild / global
+# todo: rewrite this entire thing to not just dump everything into one file.
 
 connection = sqlite3.connect("database.db")
 cursor = connection.cursor()

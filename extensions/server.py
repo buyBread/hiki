@@ -13,15 +13,21 @@ class Moderation(commands.Cog):
     @commands.guild_only()
     @commands.has_permissions(manage_messages=True)
     async def clear(self, ctx, limit: int):
-        """Delete a specified amount of messages."""       
+        """Delete a specified amount of messages."""
+        if limit < 1:
+            await ctx.send("Invalid value.")
+            return
+
         logs = f"#{ctx.channel}\n\n"
+        # todo: make file name more informative
+        # todo: make the date more readable
         log_file_name = f"clear_log_{datetime.utcnow()}.txt" # so we don't desync
+        
         async for message in ctx.channel.history(limit=limit+1):
             logs += f"{message.created_at} | {message.author} ({message.author.id}): {message.content}\n"
             with open(os.path.join("clear_logs", log_file_name), "w") as f:
                 f.write(logs)
 
-        # fix this later
         await ctx.channel.purge(limit=limit+1)
 
         self.bot.dispatch("clear_invoked", limit, ctx.channel, ctx.author, log_file_name)       
@@ -44,6 +50,7 @@ class GuildManagement(commands.Cog, name="Guild Management"):
     @commands.group()
     @commands.guild_only()
     @commands.has_permissions(manage_guild=True)
+    # display guild information
     async def guild(self, ctx):
         if ctx.invoked_subcommand == None:
             embed = discord.Embed(title=ctx.guild.name)
@@ -93,31 +100,35 @@ class GuildManagement(commands.Cog, name="Guild Management"):
             embed.color = 0x2F3136
             embed.set_thumbnail(url=ctx.guild.icon_url)
 
-            for invite in await ctx.guild.invites():
-                expiration = ""
-                if invite.max_age != 0:
-                    seconds = int(invite.max_age - (datetime.utcnow() - invite.created_at).total_seconds())
-                    minutes = 0
-                    hours = 0
+            if await ctx.guild.invites() == None:
+                embed.description += "\n\n**Guild has no invites**"
+            else:
+                for invite in await ctx.guild.invites():
+                    expiration = ""
+                    # there's probably a way cleaner way to do it?
+                    if invite.max_age != 0:
+                        seconds = int(invite.max_age - (datetime.utcnow() - invite.created_at).total_seconds())
+                        minutes = 0
+                        hours = 0
                 
-                    while seconds > 60:
-                        minutes += 1
-                        if (minutes >= 60):
-                            minutes = 0
-                            hours += 1
-                        seconds -= 60
+                        while seconds > 60:
+                            minutes += 1
+                            if (minutes >= 60):
+                                minutes = 0
+                                hours += 1
+                            seconds -= 60
 
-                    expiration = f"{hours}h {minutes}m {seconds}s"
-                else:
-                    expiration = "Infinite"
+                        expiration = f"{hours}h {minutes}m {seconds}s"
+                    else:
+                        expiration = "Infinite"
 
-                embed.add_field(
-                    name=invite.code,
-                    value=f"Creator: {invite.inviter}\n"
-                    f"Expires in: {expiration}\n"
-                    f"Uses: {invite.uses}\n",
-                    inline=True
-                )
+                    embed.add_field(
+                        name=invite.code,
+                        value=f"Creator: {invite.inviter}\n"
+                        f"Expires in: {expiration}\n"
+                        f"Uses: {invite.uses}\n",
+                        inline=True
+                    )
 
             await ctx.send(embed=embed)
 

@@ -194,7 +194,7 @@ class MusicPlayer:
         else:
             await self.channel.send("> Couldn't set Volume.")
 
-class MusicCommands(commands.Cog, name="Music"):
+class MusicCommands(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot

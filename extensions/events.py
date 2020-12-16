@@ -1,4 +1,4 @@
-import discord, os
+import discord, os, asyncio
 from discord import AuditLogAction
 from discord.ext import commands
 from random import randint
@@ -82,8 +82,9 @@ class AuditLog(commands.Cog):
         if member.bot:
             return
 
-        embed = discord.Embed(title=f"{member} has joined the server.", timestamp=datetime.utcnow())
-        embed.description = f"User ID: {member.id}\nAccount Date: {member.created_at.strftime('%Y/%m/%d')}"
+        embed = discord.Embed(title="A member has joined the server.", timestamp=datetime.utcnow())
+        embed.description = f"Username: {member}\nUser ID: {member.id}\nAccount Date: {member.created_at.strftime('%Y/%m/%d')}"
+        embed.set_thumbnail(url=member.avatar_url)
         embed.color=0x2F3136
 
         await channel(member.guild, "audit").send_embed(embed)
@@ -93,8 +94,9 @@ class AuditLog(commands.Cog):
         if member.bot:
             return
 
-        embed = discord.Embed(title=f"{member} has left the server.", timestamp=datetime.utcnow())
-        embed.description = f"User ID: {member.id}"
+        embed = discord.Embed(title="A member has left the server.", timestamp=datetime.utcnow())
+        embed.description = f"Username: {member}\nUser ID: {member.id}"
+        embed.set_thumbnail(url=member.avatar_url)
         embed.color = 0x2F3136
 
         async for entry in member.guild.audit_logs(limit=1):
@@ -118,8 +120,9 @@ class AuditLog(commands.Cog):
         if len(after.embeds) != 0:
             return
 
-        embed = discord.Embed(title=f"{after.author} has edited a message.", timestamp=datetime.utcnow())
-        embed.description = f"User ID: {after.author.id}"
+        embed = discord.Embed(title="Message edited.", timestamp=datetime.utcnow())
+        embed.description = f"Username: {after.author}\nUser ID: {after.author.id}"
+        embed.set_thumbnail(url=after.author.avatar_url)
         embed.color = 0xACF00E
         
         embed.add_field(name="Before", value=before.content, inline=False)
@@ -134,8 +137,9 @@ class AuditLog(commands.Cog):
         if len(message.embeds) != 0:
             return
 
-        embed = discord.Embed(title=f"{message.author} has deleted a message.", timestamp=datetime.utcnow())
-        embed.description = f"User ID: {message.author.id}"
+        embed = discord.Embed(title="Message deleted.", timestamp=datetime.utcnow())
+        embed.description = f"Username: {message.author}\nUser ID: {message.author.id}"
+        embed.set_thumbnail(url=message.author.avatar_url)
         embed.color = 0xEE28FC
 
         embed.add_field(name="Content", value=message.content, inline=False)
@@ -154,13 +158,18 @@ class AuditLog(commands.Cog):
         await channel(message.guild, "audit").send_embed(embed)
 
     @commands.Cog.listener()
-    async def on_clear_invoked(self, limit, chan, user, log_file):
-        embed = discord.Embed(title=f"{user} cleared {limit} messages in `#{chan}`.", timestamp=datetime.utcnow())
-        embed.description = f"User ID: {user.id}"
+    async def on_clear_invoked(self, limit, chan, member, log_file):
+        embed = discord.Embed(title=f"{limit} messages cleared in `#{chan}`.", timestamp=datetime.utcnow())
+        embed.description = f"Username: {member}\nUser ID: {member.id}"
+        embed.set_thumbnail(url=member.avatar_url)
         embed.color= 0xFF5EBC
 
         await channel(chan.guild, "audit").send_embed(embed)
         await channel(chan.guild, "audit").send_file(f"clear_logs/{log_file}")
+
+        await asyncio.sleep(1)
+
+        os.remove(f"clear_logs/{log_file}")
 
 def setup(bot):
     bot.add_cog(GeneralEvents(bot))

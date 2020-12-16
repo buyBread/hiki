@@ -4,7 +4,7 @@ from utils import database as db
 from utils.messaging import formatter
 from datetime import datetime
 
-class UserUtility(commands.Cog, name="User Utility"):
+class UserUtility(commands.Cog):
     
     def __init__(self, bot):
         self.bot = bot
@@ -76,20 +76,17 @@ class UserUtility(commands.Cog, name="User Utility"):
                 title="Help Page",
                 description=
                 "This is a list of available commands.\n"
-                f"Use `{ctx.prefix}help [command]` to see it's usage.", 
-                timestamp=datetime.utcnow()
+                f"Use `{ctx.prefix}help [command]` to see it's usage."   
             )
             embed.color = 0x2F3136
 
             commands = []
 
-            general_commands = []
-            mod_commands = []
-            music_commands = []
+            general_commands = ["\n"]
+            mod_commands = ["\n"]
+            music_commands = ["\n"]
 
-            for cog in self.bot.cogs: # this doesn't give an actual cog
-                cog = self.bot.get_cog(cog) # so get it here
-
+            for string, cog in self.bot.cogs.items():
                 for command in cog.walk_commands():
                     if command.hidden == True:
                         pass
@@ -100,13 +97,13 @@ class UserUtility(commands.Cog, name="User Utility"):
                     else:
                         commands.append(str(command))
 			
-                if cog.qualified_name in ["User Utility"]:
+                if cog.qualified_name in ["UserUtility"]:
                     general_commands.extend(commands)
                     commands.clear()
                 elif cog.qualified_name in ["Moderation", "Guild Management"]:
                     mod_commands.extend(commands)
                     commands.clear()
-                elif cog.qualified_name in ["Music"]:
+                elif cog.qualified_name in ["MusicCommands"]:
                     music_commands.extend(commands)
                     commands.clear()
                 else:
@@ -114,9 +111,9 @@ class UserUtility(commands.Cog, name="User Utility"):
 
             embed.set_thumbnail(url=self.bot.user.avatar_url)
             
-            embed.add_field(name="General Commands", value=formatter("\n" + "\n".join(general_commands)).codeblock(), inline=True)
-            embed.add_field(name="Mod Commands", value=formatter("\n" + "\n".join(mod_commands)).codeblock(), inline=True)
-            embed.add_field(name="Music Commands", value=formatter("\n" + "\n".join(music_commands)).codeblock(), inline=True)
+            embed.add_field(name="General Commands", value=formatter("\n".join(general_commands)).codeblock(), inline=True)
+            embed.add_field(name="Mod Commands", value=formatter("\n".join(mod_commands)).codeblock(), inline=True)
+            embed.add_field(name="Music Commands", value=formatter("\n".join(music_commands)).codeblock(), inline=True)
 
             await ctx.send(embed=embed)
         else:

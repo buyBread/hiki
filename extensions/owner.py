@@ -1,6 +1,7 @@
 import discord, requests, os, importlib
 from discord.ext import commands
 from utils import cosmetic
+from utils.database import DatabaseTool
 from utils.messaging import formatter
 
 class GeneralOwner(commands.Cog, command_attrs=dict(hidden=True)):
@@ -132,6 +133,84 @@ class DatabaseManagement(commands.Cog, command_attrs=dict(hidden=True)):
     # todo:
     # - add guild database reset
     # - add guild database value modification
+
+    @commands.group()
+    async def database(self, ctx):
+         if ctx.invoked_subcommand == None:
+            embed = discord.Embed(title="Available Commands")
+            embed.color = 0x2F3136
+            embed.description = "\n".join(formatter(str(x)).block() for x in ctx.command.commands)
+            await ctx.send(embed=embed)
+
+    @database.command(name="search")
+    async def database_search(self, ctx, guild = None):
+        database_list = []
+
+        for database in os.listdir("database"):
+            database_list.append(database[:-3])
+
+        embed = discord.Embed(title="Search results")
+        embed.color = 0x2F3136
+
+        found = False
+
+        # database names are guild IDs
+        if guild in database_list:
+            found = True
+            
+            guild = self.bot.get_guild(int(guild))
+            
+            embed.set_thumbnail(url=guild.icon_url)
+            embed.add_field(
+                name=guild.name,
+                value=f"**Member Count**: {len(guild.members)}",
+                inline=True
+            )
+        else:
+            matching_guilds = []
+
+            # do a very heavy process
+            for x in database_list:
+                x = self.bot.get_guild(int(x))
+
+                if guild in x.name:
+                    matching_guilds.append(x)
+
+            if len(matching_guilds) > 0:
+                found = True
+
+                for x in matching_guilds:
+                    if len(matching_guilds) == 1:
+                        embed.set_thumbnail(url=x.icon_url)
+
+                    embed.add_field(
+                        name=x.name,
+                        value=f"**Member Count**: {len(x.members)}\n**ID**: {x.id}",
+                        inline=True
+                    )
+            
+        if not found:
+            embed.description = "Nothing found."
+
+        await ctx.send(embed=embed)
+
+    @database.command(name="reset")
+    async def database_reset(self, ctx, guild):
+        if os.path.exists(f"database/{guild}.db"):
+            os.remove(f"database/{guild}.db")
+
+            guild = self.bot.get_guild(guild)
+            DatabaseTool(guild).check_guild()
+
+            await ctx.send(f"Database for guild **{guild.name}** has been reset.")
+
+    @database.command(name="edit")
+    async def database_edit(self, ctx, guild, member: discord.Member, key, value):
+        if os.path.exists(f"database/{guild}.db"):
+            guild = self.bot.get_guild(guild)
+            DatabaseTool(guild).update_member_data(member, key, value)
+
+            await ctx.send(f"Database edited for **{guild.name}** guild's member <@{member.id}>.")
 
     async def cog_check(self, ctx):
         return await self.bot.is_owner(ctx.author)  

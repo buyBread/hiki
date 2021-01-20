@@ -1,4 +1,6 @@
-database.db
-discord.log
+database
 clear_logs
-downloads/*
+downloads
+.vscode
+
+discord.log

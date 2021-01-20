@@ -3,7 +3,7 @@ from discord import AuditLogAction
 from discord.ext import commands
 from random import randint
 from datetime import datetime
-from utils import database as db
+from utils.database import DatabaseTool
 from utils.cosmetic import change_presence
 from utils.messaging import formatter, channel
 
@@ -17,40 +17,29 @@ class GeneralEvents(commands.Cog):
         print("Ready!", end = "\n\n")
         await change_presence(self.bot, "watching", "for >help")
 
-        db.setup_users(self.bot.get_all_members())
+        for guild in self.bot.guilds:
+            DatabaseTool(guild).check_guild()
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
         if member.bot:
             return
 
-        db.add_user(member)
+        DatabaseTool(member.guild).add_guild_member(member)
 
     @commands.Cog.listener()
     async def on_message(self, message):
-        if message.author.bot:
-            return
-
         author = message.author
 
-        db.update_message_count(author)
+        if author.bot:
+            return
 
-        # to somewhat mitigate spam
-        should_update_level = False
-        if len(message.content) > randint(4, 12):
-            should_update_level = True
-        elif len(message.content) == 0:
-            if len(message.attachments) > 0:
-                should_update_level = True
+        db = DatabaseTool(message.guild)
 
-        if should_update_level:
-            # store to a variable before updating the database
-            old_level = db.get_level(author)
-            db.update_level(author)
-            new_level = db.get_level(author)
+        message_count = db.get_member_data(author)[0]
+        db.update_member_data(author, "messages", message_count + 1)
 
-            if (old_level < new_level):
-                await message.channel.send(formatter(f"{author.mention} **{new_level}**").qoute())
+        del db
 
 class ErrorHandling(commands.Cog):
 

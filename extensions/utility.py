@@ -1,6 +1,6 @@
 import discord, asyncio
 from discord.ext import commands
-from utils import database as db
+from utils.database import DatabaseTool
 from utils.messaging import formatter
 from datetime import datetime
 
@@ -37,12 +37,14 @@ class UserUtility(commands.Cog):
             await ctx.send("Bot's don't have profiles.. :(")
             return
 
+        member_data = DatabaseTool(member.guild).get_member_data(member)
+
         embed = discord.Embed(
             title=f"Profile of {member}",
             description=
-            f"I've seen **{db.get_message_count(member)}** messages sent by **{member.name}**.\n"
-            f"Level: **{db.get_level(member)}**\n"
-            f"Experience: **{(((db.get_level(member) - 1) * 50) + db.get_experience(member)):.2f}**",
+            f"I've seen **{member_data[0]}** messages sent by **{member.name}**.\n"
+            f"Level: **{int(member_data[0] / 100) + 1}**\n"
+            f"Warnings: **{member_data[1]}**",
             timestamp=datetime.utcnow()
         )
         embed.color = 0x2F3136
@@ -58,11 +60,14 @@ class UserUtility(commands.Cog):
         embed = discord.Embed(title="Top 10 members", timestamp=datetime.utcnow())
         embed.color = 0x2F3136
 
+        all_member_data = DatabaseTool(ctx.guild).get_all_members()
+        # sort data based on member_data[0] (message count)
+        all_member_data.sort(key=lambda x: x[1][0], reverse=True)
+
         description = ""
-        top_users = db.get_top_users(self.bot.get_all_members())
         for i in range(0, 10):
-            user_data = top_users[i]
-            description += f"{i+1}. **{user_data[0]}** (Level: {db.get_level(user_data[0])}) - **{user_data[1]:.2f}** Experience\n"
+            member_data = all_member_data[i]
+            description += f"{i + 1}. **{member_data[0]}** (Messages: **{member_data[1][0]}**\n"
 
         embed.description = description
 

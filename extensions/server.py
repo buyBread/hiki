@@ -10,7 +10,6 @@ class Moderation(commands.Cog):
         self.bot = bot
 
     @commands.command(usage="limit")
-    @commands.guild_only()
     @commands.has_permissions(manage_messages=True)
     async def clear(self, ctx, limit: int):
         """Delete a specified amount of messages."""
@@ -32,6 +31,18 @@ class Moderation(commands.Cog):
 
         self.bot.dispatch("clear_invoked", limit, ctx.channel, ctx.author, log_file_name)       
 
+    @commands.command(usage="member reason")
+    @commands.has_permissions(manage_messages=True)
+    async def kick(self, ctx, member: discord.Member, reason: str = None):
+        member.kick(reason=reason)
+        await ctx.send(f"{member} has been kicked.")
+
+    @commands.command(usage="member reason")
+    @commands.has_permissions(manage_messages=True)
+    async def kick(self, ctx, member: discord.Member, reason: str = None):
+        member.ban(reason=reason)
+        await ctx.send(f"{member} has been banned.")
+
     async def cog_check(self, ctx):
         if isinstance(ctx.channel, discord.DMChannel):
             await ctx.send("You are not able to use Moderation commands in DMs")
@@ -39,7 +50,12 @@ class Moderation(commands.Cog):
 
         return True
 
-class GuildManagement(commands.Cog, name="Guild Management"):
+class GuildDatabase(commands.Cog):
+
+    def __init__(self, bot):
+        self.bot = bot
+
+class GuildManagement(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
@@ -48,8 +64,6 @@ class GuildManagement(commands.Cog, name="Guild Management"):
     # add guild name change
 
     @commands.group()
-    @commands.guild_only()
-    @commands.has_permissions(manage_guild=True)
     # display guild information
     async def guild(self, ctx):
         if ctx.invoked_subcommand == None:
@@ -66,7 +80,6 @@ class GuildManagement(commands.Cog, name="Guild Management"):
             await ctx.send(embed=embed)
 
     @guild.command(name="verification")
-    @commands.guild_only()
     @commands.has_permissions(manage_guild=True)
     async def change_guild_verification(self, ctx, *, level: str = None):
         if level == None:
@@ -91,7 +104,6 @@ class GuildManagement(commands.Cog, name="Guild Management"):
         await ctx.send(formatter(f"Guild verification set to **{level.lower()}**.").qoute())
 
     @guild.group(name="invites")
-    @commands.guild_only()
     @commands.has_permissions(manage_guild=True)
     async def guild_invites(self, ctx):
         if ctx.invoked_subcommand == None:
@@ -100,8 +112,8 @@ class GuildManagement(commands.Cog, name="Guild Management"):
             embed.color = 0x2F3136
             embed.set_thumbnail(url=ctx.guild.icon_url)
 
-            if await ctx.guild.invites() == None:
-                embed.description += "\n\n**Guild has no invites**"
+            if len(await ctx.guild.invites()) == 0:
+                embed.description += "\n\n**Guild has no invites.**"
             else:
                 for invite in await ctx.guild.invites():
                     expiration = ""
@@ -133,7 +145,6 @@ class GuildManagement(commands.Cog, name="Guild Management"):
             await ctx.send(embed=embed)
 
     @guild_invites.command(name="delete")
-    @commands.guild_only()
     @commands.has_permissions(manage_guild=True)
     async def delete_guild_invite(self, ctx, code = None):
         if code == None:
@@ -152,4 +163,5 @@ class GuildManagement(commands.Cog, name="Guild Management"):
 
 def setup(bot):
     bot.add_cog(Moderation(bot))
+    bot.add_cog(GuildDatabase(bot))
     bot.add_cog(GuildManagement(bot))

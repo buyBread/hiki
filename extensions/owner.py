@@ -130,10 +130,6 @@ class DatabaseManagement(commands.Cog, command_attrs=dict(hidden=True)):
     def __init__(self, bot):
         self.bot = bot
 
-    # todo:
-    # - add guild database reset
-    # - add guild database value modification
-
     @commands.group()
     async def database(self, ctx):
          if ctx.invoked_subcommand == None:
@@ -199,15 +195,15 @@ class DatabaseManagement(commands.Cog, command_attrs=dict(hidden=True)):
         if os.path.exists(f"database/{guild}.db"):
             os.remove(f"database/{guild}.db")
 
-            guild = self.bot.get_guild(guild)
-            DatabaseTool(guild).check_guild()
+            guild = self.bot.get_guild(int(guild))
+            DatabaseTool(guild).initialize()
 
             await ctx.send(f"Database for guild **{guild.name}** has been reset.")
 
     @database.command(name="edit")
     async def database_edit(self, ctx, guild, member: discord.Member, key, value):
         if os.path.exists(f"database/{guild}.db"):
-            guild = self.bot.get_guild(guild)
+            guild = self.bot.get_guild(int(guild))
             DatabaseTool(guild).update_member_data(member, key, value)
 
             await ctx.send(f"Database edited for **{guild.name}** guild's member <@{member.id}>.")

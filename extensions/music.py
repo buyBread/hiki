@@ -1,4 +1,5 @@
 import discord, youtube_dl, asyncio, sys
+from utils.database import DatabaseTool
 from discord.ext import commands
 from functools import partial
 from datetime import timedelta, datetime
@@ -66,7 +67,7 @@ class MusicPlayer:
         self.queue = asyncio.Queue()
         self.next = asyncio.Event()
 
-        self.volume = 1
+        self.volume = 1.f
 
         self.current = None
         self.np = None
@@ -199,6 +200,7 @@ class MusicCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.players = {}
+        self.skip_votes = {}
 
     async def cleanup(self, guild):
         try:
@@ -255,11 +257,30 @@ class MusicCommands(commands.Cog):
         """Resumes the Song."""
         await self.get_player(ctx).resume()
 
-    @commands.command()
+    @commands.command(aliases=["s"])
     async def skip(self, ctx):
         """Stars a vote to Skip the current Song."""
-        # todo: add skip votes
-        await self.get_player(ctx).stop_current_song()
+        try:
+            self.skip_votes[ctx.guild.id] += 1
+        except KeyError:
+            self.skip_votes[ctx.guild.id] = 1
+        
+        member_count = 0
+        for member in ctx.voice_client.channel.members:
+            if member.bot == False:
+                member_count += 1
+
+        member_dj_status = DatabaseTool(ctx.guild).get_member_data(ctx.author)[2]
+
+        if member_dj_status == 0:
+            if member_count / self.skip_votes[ctx.guild.id] <= 2:
+                await self.get_player(ctx).stop_current_song()
+                await ctx.send("Skipping.")
+            else:
+                await ctx.send(f"**{self.skip_votes[ctx.guild.id]}/{member_count}** members have voted to skip.")
+        else:
+            await self.get_player(ctx).stop_current_song()
+            await ctx.send("**[DJ]** Skipping.")
 
     @commands.command(aliases=["vol"], usage="volume")
     async def volume(self, ctx, new_volume: float):
@@ -273,6 +294,19 @@ class MusicCommands(commands.Cog):
             await ctx.send("I'm not playing anything.")
         else:
             await ctx.send(embed=self.get_player(ctx).create_now_playing_embed())
+
+    @commands.command()
+    @commands.has_permissions(kick_members=True) # mod check
+    async def dj(self, ctx, member: discord.Member):
+        """Moderator command, changes the DJ status of a member."""
+        member_dj_status = DatabaseTool(ctx.guild).get_member_data(member)[2]
+
+        if member_dj_status == 0:
+            DatabaseTool(ctx.guild).update_member_data(member, "dj_status", 1)
+            await ctx.send(f"{member.mention} is now a DJ.")
+        else:
+            DatabaseTool(ctx.guild).update_member_data(member, "dj_status", 0)
+            await ctx.send(f"{member.mention} is no longer a DJ.")
 
     async def cog_check(self, ctx):
         if isinstance(ctx.channel, discord.DMChannel):

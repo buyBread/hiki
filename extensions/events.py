@@ -5,7 +5,8 @@ from random import randint
 from datetime import datetime
 from utils.database import DatabaseTool
 from utils.cosmetic import change_presence
-from utils.messaging import formatter, channel
+from utils.messaging import channel
+from utils.messaging import formatter as form
 
 class GeneralEvents(commands.Cog):
     
@@ -18,14 +19,19 @@ class GeneralEvents(commands.Cog):
         await change_presence(self.bot, "watching", "for >help")
 
         for guild in self.bot.guilds:
-            DatabaseTool(guild).check_guild()
+            DatabaseTool(guild).initialize()
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
         if member.bot:
             return
 
+        asyncio.sleep(5) # delay the database call for AuditLog
         DatabaseTool(member.guild).add_guild_member(member)
+
+    @commands.Cog.listener()
+    async def on_guild_join(self, guild):
+        DatabaseTool(guild).initialize()
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -52,19 +58,22 @@ class ErrorHandling(commands.Cog):
 
         if isinstance(error, commands.CommandNotFound):
             pass
+        elif isinstance(error, commands.MissingPermissions):
+            await ctx.send("You are missing permissions to use this command.")
         elif isinstance(error, commands.MissingRequiredArgument):
-            await ctx.send(formatter(f"{formatter(error.param.name).block()} is missing\n").qoute())
+            await ctx.send(form(f"{form(error.param.name).block()} is missing\n").qoute())
         else:
-            await ctx.send(formatter(f"Something went wrong.. {formatter(error).codeblock()}").qoute())
+            await ctx.send(form(f"Something went wrong.. {form(error).codeblock()}").qoute())
 
-# relays audit log information + custom events
 class AuditLog(commands.Cog):
+    """
+    Discord Audit Log "extension".
+
+    Logs message related things along with providing some extra context to certain events.
+    """
 
     def __init__(self, bot):
         self.bot = bot
-
-    # todo:
-    # - log guild changes
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
@@ -72,9 +81,12 @@ class AuditLog(commands.Cog):
             return
 
         embed = discord.Embed(title="A member has joined the server.", timestamp=datetime.utcnow())
-        embed.description = f"Username: {member}\nUser ID: {member.id}\nAccount Date: {member.created_at.strftime('%Y/%m/%d')}"
+        embed.description = f"Username: {member}\nUser ID: {member.id}\nAccount Date: {member.created_at.strftime('%Y/%m/%d')}\n"
         embed.set_thumbnail(url=member.avatar_url)
         embed.color=0x2F3136
+
+        if DatabaseTool(member.guild).check_member(member) == True:
+            embed.description += "Member has already joined this server previously."
 
         await channel(member.guild, "audit").send_embed(embed)
 
@@ -124,7 +136,7 @@ class AuditLog(commands.Cog):
         if message.author.bot:
             return
         if len(message.embeds) != 0:
-            return
+            return # embeds are tricky, rather just ignore them
 
         embed = discord.Embed(title="Message deleted.", timestamp=datetime.utcnow())
         embed.description = f"Username: {message.author}\nUser ID: {message.author.id}"
@@ -133,14 +145,12 @@ class AuditLog(commands.Cog):
 
         embed.add_field(name="Content", value=message.content, inline=False)
 
-        # get the responsible moderator and check if a bot deleted the message(s)
         async for entry in message.guild.audit_logs(limit=1):
             if entry.action == AuditLogAction.message_delete:
                 if entry.user.bot:
-                    return
+                    return # we don't want to log bots deleting messages
 
                 if entry.target == message.author:
-
                     embed.title = f"A message by {message.author} has been deleted."
                     embed.add_field(name="Responsible", value=entry.user, inline=False)
 
@@ -156,7 +166,7 @@ class AuditLog(commands.Cog):
         await channel(chan.guild, "audit").send_embed(embed)
         await channel(chan.guild, "audit").send_file(f"clear_logs/{log_file}")
 
-        await asyncio.sleep(1)
+        await asyncio.sleep(10)
 
         os.remove(f"clear_logs/{log_file}")
 

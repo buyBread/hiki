@@ -67,7 +67,7 @@ class UserUtility(commands.Cog):
         description = ""
         for i in range(0, 10):
             member_data = all_member_data[i]
-            description += f"{i + 1}. **{member_data[0]}** (Messages: **{member_data[1][0]}**\n"
+            description += f"{i + 1}. `{member_data[0]}` (Messages: **{member_data[1][0]}**)\n"
 
         embed.description = description
 
@@ -105,7 +105,7 @@ class UserUtility(commands.Cog):
                 if cog.qualified_name in ["UserUtility"]:
                     general_commands.extend(commands)
                     commands.clear()
-                elif cog.qualified_name in ["Moderation", "Guild Management"]:
+                elif cog.qualified_name in ["Moderation", "GuildManagement"]:
                     mod_commands.extend(commands)
                     commands.clear()
                 elif cog.qualified_name in ["MusicCommands"]:

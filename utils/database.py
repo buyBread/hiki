@@ -19,9 +19,9 @@ class DatabaseTool:
         # close connection when object is deleted
         self.connection.close()
 
-    def check_guild(self):
+    def initialize(self):
         """
-        Checks if the Guild has a table and adds all members.
+        Creates a members table if it doesn't exist and adds all members.
 
         If the Guild has a table, only missing members are added.
         """
@@ -37,13 +37,24 @@ class DatabaseTool:
         # also add all members after creating our table
         self.add_all_guild_members()
 
+    def check_member(self, member):
+        """
+        Checks if a member is in the database.
+
+        Parametres:
+        - member: discord.Member object
+        """
+        # check if member's ID is in the table
+        if len(self.cursor.execute(f"SELECT * FROM members WHERE id={member.id}").fetchall()) == 0:
+            return False
+
+        return True
+
     def add_all_guild_members(self):
         """Adds all members that aren't in the database yet."""
 
         for member in self.guild.members:
-            # if the member is not in the table
-            if len(self.cursor.execute(f"SELECT * FROM members WHERE id={member.id}").fetchall()) == 0:
-                # add them
+            if self.check_member(member) == False:
                 self.add_guild_member(member)
             else:
                 pass
@@ -71,9 +82,9 @@ class DatabaseTool:
 
         messages = self.cursor.execute(f"SELECT messages FROM members WHERE id={member.id}").fetchone()[0]
         warnings = self.cursor.execute(f"SELECT warnings FROM members WHERE id={member.id}").fetchone()[0]
-        warnings = self.cursor.execute(f"SELECT dj_status FROM members WHERE id={member.id}").fetchone()[0]
+        dj_status = self.cursor.execute(f"SELECT dj_status FROM members WHERE id={member.id}").fetchone()[0]
 
-        return [messages, warnings]
+        return [messages, warnings, dj_status]
 
     def get_all_members(self):
         """Returns a List of all members' data in a guild."""

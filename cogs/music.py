@@ -1,9 +1,15 @@
-import discord, youtube_dl, asyncio, sys
-from utils.database import DatabaseTool
+import discord
+import youtube_dl
+import asyncio
+
 from discord.ext import commands
 from functools import partial
 from datetime import timedelta, datetime
 from async_timeout import timeout
+
+from lib.embed import construct_embed
+
+from utils.database import GuildDatabase
 
 # based off: https://gist.github.com/EvieePy/ab667b74e9758433b3eb806c53a19f34
 
@@ -67,7 +73,7 @@ class MusicPlayer:
         self.queue = asyncio.Queue()
         self.next = asyncio.Event()
 
-        self.volume = 1.f
+        self.volume = 1
 
         self.current = None
         self.np = None
@@ -82,11 +88,11 @@ class MusicPlayer:
     def create_now_playing_embed(self, for_player_loop=False):
         source = self.voice_client.source
 
-        embed = discord.Embed(
+        embed = construct_embed(
             title="Now Playing",
-            description=f"[{source.title}]({source.webpage_url})"
+            description=f"[{source.title}]({source.webpage_url})",
+            color = 0x2F3136
         )
-        embed.color = 0x2F3136
 
         # todo: if not lazy stop using tiemdate.timedelta, cringe lol
 
@@ -195,7 +201,7 @@ class MusicPlayer:
         else:
             await self.channel.send("> Couldn't set Volume.")
 
-class MusicCommands(commands.Cog):
+class Music(commands.Cog, name="Music Commands"):
 
     def __init__(self, bot):
         self.bot = bot
@@ -225,8 +231,7 @@ class MusicCommands(commands.Cog):
     # todo:
     # - display the queue
     # - add a way to index items from the queue and move or remove them
-    # - add a database-based dj list -> rework database
-    # - add force skip for moderators and djs
+    # - add force skip for moderators
 
     @commands.command(aliases=["join", "summon"])
     async def connect(self, ctx):
@@ -270,7 +275,7 @@ class MusicCommands(commands.Cog):
             if member.bot == False:
                 member_count += 1
 
-        member_dj_status = DatabaseTool(ctx.guild).get_member_data(ctx.author)[2]
+        member_dj_status = GuildDatabase(ctx.guild).get_member_data(ctx.author)["DJ_STATUS"]
 
         if member_dj_status == 0:
             if member_count / self.skip_votes[ctx.guild.id] <= 2:
@@ -299,13 +304,13 @@ class MusicCommands(commands.Cog):
     @commands.has_permissions(kick_members=True) # mod check
     async def dj(self, ctx, member: discord.Member):
         """Moderator command, changes the DJ status of a member."""
-        member_dj_status = DatabaseTool(ctx.guild).get_member_data(member)[2]
+        member_dj_status = GuildDatabase(ctx.guild).get_member_data(member)["DJ_STATUS"]
 
         if member_dj_status == 0:
-            DatabaseTool(ctx.guild).update_member_data(member, "dj_status", 1)
+            GuildDatabase(ctx.guild).update_member_data(member, "dj_status", 1)
             await ctx.send(f"{member.mention} is now a DJ.")
         else:
-            DatabaseTool(ctx.guild).update_member_data(member, "dj_status", 0)
+            GuildDatabase(ctx.guild).update_member_data(member, "dj_status", 0)
             await ctx.send(f"{member.mention} is no longer a DJ.")
 
     async def cog_check(self, ctx):
@@ -315,4 +320,4 @@ class MusicCommands(commands.Cog):
         return True
 
 def setup(bot):
-    bot.add_cog(MusicCommands(bot))
+    bot.add_cog(Music(bot))

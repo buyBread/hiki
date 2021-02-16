@@ -1,8 +1,15 @@
-import discord, requests, os, importlib
+import discord
+import requests
+import os
+import importlib
+
 from discord.ext import commands
-from utils import cosmetic
-from utils.database import DatabaseTool
-from utils.messaging import formatter
+
+from lib.embed import construct_embed
+from lib.presence import construct_activity
+from lib.enums import activity_type, embed_color
+
+from utils.database import GlobalDatabase, GuildDatabase
 
 class GeneralOwner(commands.Cog, command_attrs=dict(hidden=True)):
 
@@ -10,12 +17,12 @@ class GeneralOwner(commands.Cog, command_attrs=dict(hidden=True)):
         self.bot = bot
 
     @commands.command()
-    async def say(self, ctx, *, msg):
+    async def say(self, ctx, *, msg) -> None:
         await ctx.send(msg)
 
     @commands.command()
-    async def esay(self, ctx, title, msg):
-        await ctx.send(embed=discord.Embed(title=title, description=msg, color=0x2F3136))
+    async def esay(self, ctx, title, msg) -> None:
+        await ctx.send(embed=construct_embed(title=title, description=msg, color=0x2F3136))
 
     async def cog_check(self, ctx):
         return await self.bot.is_owner(ctx.author)
@@ -26,25 +33,30 @@ class BotProfile(commands.Cog, command_attrs=dict(hidden=True)):
         self.bot = bot
 
     @commands.group(aliases=["bot", "change", "change bot", "bot change"])
-    async def _bot_profile(self, ctx):
+    async def _bot_profile(self, ctx) -> None:
         if ctx.invoked_subcommand == None:
-            embed = discord.Embed(title="Available Commands")
-            embed.color = 0x2F3136
-            embed.description = "\n".join(formatter(str(x)).block() for x in ctx.command.commands)
+            embed = construct_embed(title="Available Commands")
+            embed.color = embed_color["DEFAULT"]
+            embed.description = "\n".join(f"`{str(x)}`" for x in ctx.command.commands)
             await ctx.send(embed=embed)
 
     @_bot_profile.command(name="username")
-    async def change_username(self, ctx, *, username: str):
+    async def change_username(self, ctx, *, username: str) -> None:
         await self.bot.user.edit(username=username)
         await ctx.send(f"Changed username to {username}.")
 
     @_bot_profile.command(name="presence")
-    async def change_presence(self, ctx, type: str, *, text: str):
-        await cosmetic.change_presence(self.bot, type, text)
-        await ctx.send(f"Changed presence to {text}.")
+    async def change_presence(self, ctx, type: str, *, text: str) -> None:
+        self.bot.change_presence(
+            activity=construct_activity(
+                type=activity_type[type.upper()],
+                name=text
+            )
+        )
+        await ctx.send(f"Changed presence to {type} {text}.")
 
     @_bot_profile.command(name="avatar")
-    async def change_avatar(self, ctx, url: str = None):
+    async def change_avatar(self, ctx, url: str = None) -> None:
         if url == None:
             if len(ctx.message.attachments) == 1:
                 url = ctx.message.attachments[0].url
@@ -71,56 +83,56 @@ class CogManagement(commands.Cog, command_attrs=dict(hidden=True)):
         self.bot = bot
 
     @commands.group(name="cogs")
-    async def cogs_utility(self, ctx):
+    async def cogs_utility(self, ctx) -> None:
         if ctx.invoked_subcommand == None:
-            embed = discord.Embed(title="Available Commands")
-            embed.color = 0x2F3136
-            embed.description = "\n".join(formatter(str(x)).block() for x in ctx.command.commands)
+            embed = construct_embed(title="Available Commands")
+            embed.color = embed_color["DEFAULT"]
+            embed.description = "\n".join(f"`{str(x)}`" for x in ctx.command.commands)
             await ctx.send(embed=embed)
 
     @cogs_utility.command(name="list")
-    async def cogs_list(self, ctx): 
-        extensions = [] 
-        for extension in os.listdir("extensions"):
-            extensions.append(f"extensions.{extension[:-3]}")
-
+    async def cogs_list(self, ctx) -> None:
         cogs = []
-        for cog in self.bot.cogs:
+        for cog in os.listdir("cogs"):
             cogs.append(cog)
+        
+        loaded_cogs = []
+        for _, cog in self.bot.cogs.items():
+            loaded_cogs.append(cog.qualified_name)
+ 
+        embed = construct_embed(title="Cogs List", color=embed_color["DEFAULT"])
 
-        embed = discord.Embed(title="Cogs List")
-        embed.color = 0x2F3136
+        for cog in cogs:
+            cog = f"cogs.{cog[:-3]}"
+            globals()["ext"] = importlib.import_module(cog)
 
-        for extension in extensions:
-            globals()["ext"] = importlib.import_module(extension)
-            value = ""
-
-            for cog in cogs:
+            for i in range(0, len(loaded_cogs)):
                 for obj in dir(ext):
-                    if cog == obj:
-                        value += f"{cog}\n"
-            
-            if value == "":
-                pass
-            else:
-                embed.add_field(name=extension.split(".")[1] + ".py", value=value, inline=True)
+                    if loaded_cogs[i] == obj:
+                        loaded_cogs[i] = f"`{loaded_cogs[i]} ({cog.split('.')[1] + '.py'})`"
+
+        for i in range(0, len(cogs)):
+            cogs[i] = f"`{cogs[i]}`"
+
+        embed.add_field(name="All Cogs", value="\n".join(cog for cog in cogs))
+        embed.add_field(name="Loaded Cogs", value="\n".join(cog for cog in loaded_cogs))
 
         await ctx.send(embed=embed)
 
     @cogs_utility.command(name="load")
-    async def cogs_load(self, ctx, *, extension: str):
-        self.bot.load_extension(f"extensions.{extension}")
-        await ctx.send(f"Loaded **{extension}.py**")
+    async def cogs_load(self, ctx, *, cog: str) -> None:
+        self.bot.load_extension(f"cogs.{cog}")
+        await ctx.send(f"Loaded **{cog}.py**")
 
     @cogs_utility.command(name="unload")
-    async def cogs_unload(self, ctx, *, extension: str):
-        self.bot.unload_extension(f"extensions.{extension}")
-        await ctx.send(f"Unloaded **{extension}.**")
+    async def cogs_unload(self, ctx, *, cog: str) -> None:
+        self.bot.unload_extension(f"cogs.{cog}")
+        await ctx.send(f"Unloaded **{cog}.py**")
 
     @cogs_utility.command(name="reload")
-    async def cogs_reload(self, ctx, *, extension: str):
-        self.bot.reload_extension(f"extensions.{extension}")
-        await ctx.send(f"Reloaded **{extension}.py**")
+    async def cogs_reload(self, ctx, *, cog: str) -> None:
+        self.bot.reload_extension(f"cogs.{cog}")
+        await ctx.send(f"Reloaded **{cog}.py**")
 
     async def cog_check(self, ctx):
         return await self.bot.is_owner(ctx.author)  
@@ -130,23 +142,25 @@ class DatabaseManagement(commands.Cog, command_attrs=dict(hidden=True)):
     def __init__(self, bot):
         self.bot = bot
 
+    # todo:
+    # - global database management
+
     @commands.group()
-    async def database(self, ctx):
+    async def database(self, ctx) -> None:
          if ctx.invoked_subcommand == None:
-            embed = discord.Embed(title="Available Commands")
-            embed.color = 0x2F3136
-            embed.description = "\n".join(formatter(str(x)).block() for x in ctx.command.commands)
+            embed = construct_embed(title="Available Commands")
+            embed.color = embed_color["DEFAULT"]
+            embed.description = "\n".join(f"`{str(x)}`" for x in ctx.command.commands)
             await ctx.send(embed=embed)
 
     @database.command(name="search")
-    async def database_search(self, ctx, guild = None):
+    async def database_search(self, ctx, guild = None) -> None:
         database_list = []
 
         for database in os.listdir("database"):
             database_list.append(database[:-3])
 
-        embed = discord.Embed(title="Search results")
-        embed.color = 0x2F3136
+        embed = construct_embed(title="Search results", color=embed_color["DEFAULT"])
 
         found = False
 
@@ -165,7 +179,6 @@ class DatabaseManagement(commands.Cog, command_attrs=dict(hidden=True)):
         else:
             matching_guilds = []
 
-            # do a very heavy process
             for x in database_list:
                 x = self.bot.get_guild(int(x))
 
@@ -191,20 +204,20 @@ class DatabaseManagement(commands.Cog, command_attrs=dict(hidden=True)):
         await ctx.send(embed=embed)
 
     @database.command(name="reset")
-    async def database_reset(self, ctx, guild):
+    async def database_reset(self, ctx, guild) -> None:
         if os.path.exists(f"database/{guild}.db"):
             os.remove(f"database/{guild}.db")
 
             guild = self.bot.get_guild(int(guild))
-            DatabaseTool(guild).initialize()
+            GuildDatabase(guild).initialize()
 
             await ctx.send(f"Database for guild **{guild.name}** has been reset.")
 
     @database.command(name="edit")
-    async def database_edit(self, ctx, guild, member: discord.Member, key, value):
+    async def database_edit(self, ctx, guild, member: discord.Member, key, value) -> None:
         if os.path.exists(f"database/{guild}.db"):
             guild = self.bot.get_guild(int(guild))
-            DatabaseTool(guild).update_member_data(member, key, value)
+            GuildDatabase(guild).update_member_data(member, key, value)
 
             await ctx.send(f"Database edited for **{guild.name}** guild's member <@{member.id}>.")
 

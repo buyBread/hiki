@@ -1,6 +1,4 @@
 database
-clear_logs
+prune_logs
 downloads
 .vscode
-
-discord.log

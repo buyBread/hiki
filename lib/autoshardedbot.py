@@ -44,16 +44,25 @@ class AutoShardedBot(commands.AutoShardedBot):
 
     async def get_latency(self, channel) -> float:
         """
-        * @channel: discord.TextChannel object
+        Measures the latency between more accurately by making the bot start typing.
+
+        Parameters:
+
+            channel: discord.TextChannel object
         """
         otime = time()
-        async with channel.typing():    
+        async with channel.typing():
             return time() - otime
 
     async def get_user(self, ctx, user) -> Union[discord.Member, discord.User, None]:
         """
-        * @ctx: the command Context
-        * @user: the User's name or ID
+        Tries to get a user using multiple methods.
+        Mostly for utility usage.
+
+        Parameters:
+
+            ctx: the command Context
+            user: the User's name or ID
         """
 
         if user is None:
@@ -70,8 +79,12 @@ class AutoShardedBot(commands.AutoShardedBot):
 
     def get_channel_by_name(self, guild, channel_name) -> discord.TextChannel:
         """
-        * @guild: discord.Guild object
-        * @channel_name
+        A wrapper function for using discord.utils.get to get a channel by name from a specified guild.
+
+        Parameters:
+
+            guild: discord.Guild object
+            channel_name: the name of the channel
         """
         return discord.utils.get(guild.channels, name=channel_name)
 
@@ -92,5 +105,5 @@ class AutoShardedBot(commands.AutoShardedBot):
         if GuildDatabase(member.guild).check_member(member) == False:
             GuildDatabase(member.guild).add_guild_member(member)
 
-        if GlobalDatabase(self).check_member(member) == False:
-            GlobalDatabase(self).add_guild_member(member)
+        if GlobalDatabase(self.guilds).check_member(member) == False:
+            GlobalDatabase(self.guilds).add_guild_member(member)

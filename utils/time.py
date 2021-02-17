@@ -19,7 +19,7 @@ def seconds_to_time(seconds: float) -> dict:
 
 def format_time_long(time: dict) -> str:
     """
-    Example: "x Days, x Hours, x Minutes, x Seconds"
+    Example: "X Days, X Hours, X Minutes, X Seconds"
 
     Parameters:
 

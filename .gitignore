@@ -2,3 +2,4 @@ database
 prune_logs
 downloads
 .vscode
+config.json

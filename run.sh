@@ -1,8 +1,5 @@
 while true
 do
-	rm -rf clear_logs/*
-
-	python3 -B main.py
-
+	python3 -B hiki.py
 	sleep 10
 done

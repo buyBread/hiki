@@ -20,26 +20,41 @@ class utility_cog(commands.Cog, name="Utility"):
         await interaction.response.send_message( # >.>
             f"{int(round(await self.bot.get_channel_latency(interaction.channel), 3) * 1000)}ms")
 
-    # todo: simple perms check
     @app_commands.command(
         name="help",
         description="Shows all available commands.")
     async def help_command(self, interaction: discord.Interaction) -> None:
         embed = construct_embed(
             title="Available Commands",
-            description="Commands are shown based on permissions.\nIf you don't see a certain command, it is becaus you don't have the necessary permissions.",
+            description="Only the currently availaible commands show up.",
             color=0x2F3136
         )
 
         embed.set_thumbnail(url=self.bot.user.avatar.url)
 
         for _, cog in self.bot.cogs.items():
-            embed.add_field(
-                name=cog.qualified_name,
-                value="\n".join(
-                        "**{}** ~ {}".format(cmd.qualified_name, cmd.description)
-                            for cmd in cog.get_app_commands())
-            )
+            # field properties
+            name = cog.qualified_name
+            value = ""
+
+            for cmd in cog.get_app_commands():
+                if cmd.parent != None:
+                    continue
+    
+                available = False
+                
+                if interaction.guild:
+                    if cmd.default_permissions.is_subset(interaction.user.guild_permissions):
+                        available = True
+                else:
+                    if cmd.guild_only == False:
+                        available = True
+
+                if available:
+                    value += "**{}** ~ {}".format(cmd.qualified_name, cmd.description)
+
+            if value != "":
+                embed.add_field(name=name, value=value)
     
         await interaction.response.send_message(embed=embed)
 
@@ -58,21 +73,21 @@ class utility_cog(commands.Cog, name="Utility"):
 
         embed.set_thumbnail(url=user.avatar.url)
 
+        embed.add_field(
+            name="Account Created",
+            value=discord.utils.format_dt(user.created_at),
+            inline=True,
+        )
+
         if interaction.guild:
             # check if user is part of this guild
-            if (interaction.guild.get_member(user.id)) != None:
+            if interaction.guild.get_member(user.id) != None:
                 embed.add_field(
                     name="Join Date",
                     value=discord.utils.format_dt(user.joined_at),
                     inline=True,
                 )
 
-        embed.add_field(
-            name="Account Created",
-            value=discord.utils.format_dt(user.created_at),
-            inline=True,
-        )
-    
         await interaction.response.send_message(embed=embed)
 
 async def setup(bot: Hiki) -> None:
